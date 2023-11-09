@@ -60,9 +60,34 @@ export const useAuthentication = () => {
     signOut(auth);
   };
 
+  // login - signIn
+
+  const login = async (data) => {
+    checkIfIsCancelled();
+
+    setLoading(true);
+    setError(false);
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      setLoading(false);
+    } catch (error) {
+      let sysErrorMessage;
+
+      if (error.message.includes("user-not-found")) {
+        sysErrorMessage = "Usuário não encontrado";
+      } else if (error.message.includes("wrong-password")) {
+        sysErrorMessage = "Senha incorreta";
+      } else {
+        sysErrorMessage = "Ocorreu um erro, por favor tente mais tarde";
+      }
+      setError(sysErrorMessage);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     return () => setCancelled(true);
   }, []);
 
-  return { auth, createUser, error, loading, logout };
+  return { auth, createUser, error, loading, logout, login };
 };
