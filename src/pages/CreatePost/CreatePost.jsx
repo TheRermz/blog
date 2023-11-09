@@ -2,6 +2,7 @@ import styles from "./CreatePost.module.css";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthValue } from "../../context/AuthContext";
+import { useInsertDocument } from "../../hooks/useInsertDocument";
 
 const CreatePost = () => {
   const [title, setTitle] = useState("");
@@ -10,9 +11,48 @@ const CreatePost = () => {
   const [tags, setTags] = useState([]);
   const [formError, setFormError] = useState("");
 
+  const { user } = useAuthValue();
+
+  const { insertDocument, response } = useInsertDocument("posts");
+
+  const navigate = useNavigate();
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(title, image, body, tags);
+    setFormError("");
+
+    //validar url da imagem
+    try {
+      new URL(image);
+    } catch (error) {
+      setFormError("A imagem precisa conter uma URL válida");
+    }
+    //criar array de tags
+    const tagsArray = tags.split(",").map((tag) => tag.trim().toLowerCase());
+
+    //checar todos os valores
+    if (!title || !image || !body || !tags) {
+      setFormError("Preencha todos os campos");
+      return;
+    }
+
+    if (formError) return;
+
+    insertDocument({
+      collection: "posts",
+      data: {
+        title,
+        image,
+        body,
+        tagsArray,
+        uid: user.uid,
+        createdBy: user.displayName,
+      },
+    });
+
+    // Redirect to home
+
+    navigate("/");
   };
 
   return (
@@ -63,14 +103,14 @@ const CreatePost = () => {
           />
         </label>
 
-        <button className="btn">Cadastrar</button>
-        {/* {!loading && <button className="btn">Cadastrar</button>}
-        {loading && (
+        {!response.loading && <button className="btn">Cadastrar</button>}
+        {response.loading && (
           <button className="btn" disabled>
             Carregando...
           </button>
         )}
-        {error && <p className="error">{error}</p>} */}
+        {response.error && <p className="error">{response.error}</p>}
+        {formError && <p className="error">{formError}</p>}
       </form>
     </div>
   );
