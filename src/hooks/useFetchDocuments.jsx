@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 
 export const useFetchDocuments = (docCollection, search = null, uid = null) => {
-  const [documents, setDocuments] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(null);
 
@@ -18,37 +18,56 @@ export const useFetchDocuments = (docCollection, search = null, uid = null) => {
 
   useEffect(() => {
     async function loadData() {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
+
       setLoading(true);
-      const collectionRef = await collection(db, docCollection);
+
+      const collectionRef = collection(db, docCollection);
 
       try {
         let q;
-        //busca
-        //dashboard
-        q = await query(collectionRef, orderBy("createdAt", "desc"));
 
-        await onSnapshot(q, (querySnapshot) => {
+        if (search) {
+          q = query(
+            collectionRef,
+            where("tagsArray", "array-contains", search),
+            orderBy("createdAt", "desc")
+          );
+        } else if (uid) {
+          q = query(
+            collectionRef,
+            where("uid", "==", uid),
+            orderBy("createdAt", "desc")
+          );
+        } else {
+          q = query(collectionRef, orderBy("createdAt", "desc"));
+        }
+
+        onSnapshot(q, (querySnapshot) => {
           setDocuments(
             querySnapshot.docs.map((doc) => ({
-              ...doc.data(),
               id: doc.id,
+              ...doc.data(),
             }))
           );
         });
-        setLoading(false);
       } catch (error) {
         console.log(error);
         setError(error.message);
-        setLoading(false);
       }
+
+      setLoading(false);
     }
 
     loadData();
   }, [docCollection, search, uid, cancelled]);
+  console.log(`num of documents: ${documents.length}`);
 
   useEffect(() => {
-    setCancelled(true);
+    return () => setCancelled(true);
   }, []);
-  return { documents, error, loading };
+
+  return { documents, loading, error };
 };
