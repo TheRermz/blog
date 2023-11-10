@@ -49,12 +49,8 @@ const Home = () => {
             </Link>
           </div>
         )}
-        {console.log(documents.map((post) => `post.title: ${post.title}`))}
-        {console.log(documents.map((post) => `post.id: ${post.id}`))}
         {documents &&
           documents.map((post) => <PostDetail key={post.id} post={post} />)}
-        {/* {documents &&
-          documents.map((post) => <h3 key={post.id}>{post.body}</h3>)} */}
       </div>
     </div>
   );
